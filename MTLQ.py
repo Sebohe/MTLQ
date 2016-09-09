@@ -43,13 +43,13 @@ def generateMotorList():
 
 	#thread = threading.Thread(target=(easygui.msgbox("Please wait... Parsing through the database.")))
 	#thread.start()
-	print (time.asctime())
+	print (time.clock())
 	try:
 		BOM_TABLE = DBF('MRPBOM.DBF', load=True)
 		PART_TABLE = DBF('MRPPART.DBF', load=True)
 	except Exception as e:
 		easygui.msgbox(e)
-	print (time.asctime())
+	print (time.clock())
 
 
 	for record in BOM_TABLE:
@@ -101,9 +101,9 @@ def generateMotorList():
 
 	newlist = sorted(largeMotorList, key=itemgetter('Name'))
 	largeMotorList = newlist
-	print (time.asctime())
+	print (time.clock())
 	#thread.join()
-	print (time.asctime())
+	print (time.clock())
 	return largeMotorList
 	#opens a new file called output and deletes it's contents.
 def writeToOutput(motorDictList):

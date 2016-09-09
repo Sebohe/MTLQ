@@ -43,6 +43,7 @@ def generateMotorList():
 
 	#thread = threading.Thread(target=(easygui.msgbox("Please wait... Parsing through the database.")))
 	#thread.start()
+	#Loads the database
 	print (time.clock())
 	try:
 		BOM_TABLE = DBF('MRPBOM.DBF', load=True)
@@ -51,7 +52,9 @@ def generateMotorList():
 		easygui.msgbox(e)
 	print (time.clock())
 
-
+	#Parses through the BOM database in search PT in the partnumber.
+	#If found get the motor description that mechanical gives it.
+	#and get the actual PARTNUMBER
 	for record in BOM_TABLE:
 		if record['BOMNO'] == bomNumber:
 			if 'PT' in record['PARTNO']:
@@ -61,7 +64,7 @@ def generateMotorList():
 	lengthOfQuery = (len(realPartNumberList))
 
 	#print (PART_TABLE.table_names)
-	counter = 0
+	#Look in the MRP PART database. Find model number and addtional information.
 	for part in realPartNumberList:
 		for record in PART_TABLE:
 			if record['PARTNO'] == part:
@@ -95,18 +98,26 @@ def generateMotorList():
 		lineList = line.split(",")
 		for x in range(lengthOfQuery):
 			if  lineList[0] in model[x] and lineList[1] in description[x]:
-				individualMotorDict = {'Name' : motorMechanicaName[x],'Part':secondPartNumberList[x],'Manufacturer':manufacturer[x],
-											'Model':model[x],'Description':description[x],'HP':lineList[1],'RPM':lineList[2],'A':lineList[3].rstrip('\n')}
+				individualMotorDict = {'Name' : motorMechanicaName[x],
+										'Part':secondPartNumberList[x],
+										'Manufacturer':manufacturer[x],
+										'Model':model[x],
+										'Description':description[x],
+										'HP':lineList[1],
+										'RPM':lineList[2],
+										'A':lineList[3].rstrip('\n')}
 				largeMotorList.append(individualMotorDict)
 
+	#Sort the motor by the motor name.
 	newlist = sorted(largeMotorList, key=itemgetter('Name'))
 	largeMotorList = newlist
 	print (time.clock())
 	#thread.join()
 	print (time.clock())
 	return largeMotorList
-	#opens a new file called output and deletes it's contents.
+
 def writeToOutput(motorDictList):
+	#opens a new file called output and deletes it's contents.
 	f = open('output','w+')
 	counter = 0
 	for motor in motorDictList:

@@ -1,0 +1,8 @@
+output
+*.DBF
+*.fpt
+*.FPT
+*.spec
+dist
+build
+__pycache__

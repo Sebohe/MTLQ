@@ -14,6 +14,20 @@ from shutil import copyfile
 import threading
 import time
 
+def returnALLPartNumber(bomNumber,TABLE_DBF):
+	templist1 = []
+	for record in TABLE_DBF:
+		if record['BOMNO'] == bomNumber:
+			if record['PART_ASSY'] == 'P':
+				templist1.append(record['PARTNO'])
+			elif record['PART_ASSY'] == 'A':
+				#When it is an aassem
+				templist2 = returnALLPartNumber(record['PARTNO'], TABLE_DBF)
+				for item in templist2:
+					templist1.append(item)
+	return templist1
+
+
 def generateMotorList():
 
 	MRPBOMpath = ['T:\\pcmrpw ver. 8.0\\MRPBOM.DBF','T:\\pcmrpw ver. 8.0\\mrpbom.fpt']

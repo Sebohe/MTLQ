@@ -14,61 +14,30 @@ from shutil import copyfile
 import threading
 import time
 
-def returnALLPartNumber(bomNumber,TABLE_DBF):
+#Returns all fo the part numbers that belong in a BOM.
+#This is a recursive function so it will look inside of assemblies
+def returnALLPartNumbers(bomNumber,TABLE_DBF):
 	templist1 = []
 	for record in TABLE_DBF:
 		if record['BOMNO'] == bomNumber:
 			if record['PART_ASSY'] == 'P':
 				templist1.append(record['PARTNO'])
 			elif record['PART_ASSY'] == 'A':
-				#When it is an aassem
-				templist2 = returnALLPartNumber(record['PARTNO'], TABLE_DBF)
-				for item in templist2:
+				#When it is an aassembly the part number is the next
+				#bom number
+				for item in returnALLPartNumbers(record['PARTNO'], TABLE_DBF):
 					templist1.append(item)
 	return templist1
 
 
-def generateMotorList():
-
-	MRPBOMpath = ['T:\\pcmrpw ver. 8.0\\MRPBOM.DBF','T:\\pcmrpw ver. 8.0\\mrpbom.fpt']
-	MRPPARTpath = ['T:\\pcmrpw ver. 8.0\\MRPPART.DBF','T:\\pcmrpw ver. 8.0\\MRPPART.FPT']
-	manufacturer = []
-	model = []
-	motorMechanicaName = []
-	realPartNumberList = []
-	description = []
-	secondPartNumberList = []
-	templist1 = []
-	largeMotorList = []
-	currentDir = os.path.dirname(os.path.realpath(__file__))
-	bomNumber = easygui.enterbox(msg="Enter the BOM you want to look for.")
-	if bomNumber == None:
-		#easygui.msgbox("Exiting program.")
-		sys.exit()
-
-	# try to implemented the ifile capabilities that the dbfread library has here. Just to learn.
-
-	if 'MRPBOM.DBF' not in os.listdir(currentDir) and 'mrpbom.fpt' not in os.listdir(currentDir):
-		copyfile(MRPBOMpath[0],currentDir+'\\MRPBOM.DBF')
-		copyfile(MRPBOMpath[1],currentDir+'\\mrpbom.fpt')
-	if 'MRPPART.DBF' not in os.listdir(currentDir) and 'MRPPART.FPT' not in os.listdir(currentDir):
-		copyfile(MRPPARTpath[0],currentDir+'\\MRPPART.DBF')
-		copyfile(MRPPARTpath[1],currentDir+'\\MRPPART.FPT')
-
-	#thread = threading.Thread(target=(easygui.msgbox("Please wait... Parsing through the database.")))
-	#thread.start()
-	#Loads the database
-	print (time.clock())
-	try:
-		BOM_TABLE = DBF('MRPBOM.DBF', load=True)
-		PART_TABLE = DBF('MRPPART.DBF', load=True)
-	except Exception as e:
-		easygui.msgbox(e)
-	print (time.clock())
+def generateMotorList(BOM_TABLE, PART_TABLE):
+	manufacturer, model, motorMechanicaName, realPartNumberList = [],[],[],[]
+	description, secondPartNumberList, templist1, largeMotorList = [],[],[],[]
 
 	#Parses through the BOM database in search PT in the partnumber.
 	#If found get the motor description that mechanical gives it.
 	#and get the actual PARTNUMBER
+	bomNumber = easygui.enterbox(msg="Enter the BOM you want to look for.")
 	for record in BOM_TABLE:
 		if record['BOMNO'] == bomNumber:
 			if 'PT' in record['PARTNO']:
@@ -125,9 +94,7 @@ def generateMotorList():
 	#Sort the motor by the motor name.
 	newlist = sorted(largeMotorList, key=itemgetter('Name'))
 	largeMotorList = newlist
-	print (time.clock())
 	#thread.join()
-	print (time.clock())
 	return largeMotorList
 
 def writeToOutput(motorDictList):
@@ -181,5 +148,23 @@ def writeToOutput(motorDictList):
 	subprocess.Popen([program, fileName])
 
 if __name__=="__main__":
+	MRPBOMpath = ['T:\\pcmrpw ver. 8.0\\MRPBOM.DBF','T:\\pcmrpw ver. 8.0\\mrpbom.fpt']
+	MRPPARTpath = ['T:\\pcmrpw ver. 8.0\\MRPPART.DBF','T:\\pcmrpw ver. 8.0\\MRPPART.FPT']
 
-	writeToOutput(generateMotorList())
+	currentDir = os.path.dirname(os.path.realpath(__file__))
+	if 'MRPBOM.DBF' not in os.listdir(currentDir) and 'mrpbom.fpt' not in os.listdir(currentDir):
+		copyfile(MRPBOMpath[0],currentDir+'\\MRPBOM.DBF')
+		copyfile(MRPBOMpath[1],currentDir+'\\mrpbom.fpt')
+	if 'MRPPART.DBF' not in os.listdir(currentDir) and 'MRPPART.FPT' not in os.listdir(currentDir):
+		copyfile(MRPPARTpath[0],currentDir+'\\MRPPART.DBF')
+		copyfile(MRPPARTpath[1],currentDir+'\\MRPPART.FPT')
+	try:
+		BOM_TABLE = DBF('MRPBOM.DBF',load=True)
+		PART_TABLE = DBF('MRPPART.DBF',load=True)
+	except Exception as e:
+		easygui.msgbox(e)
+
+	sys.setrecursionlimit(2000)
+
+	#returnALLPartNumbers('151032-PD7', BOM_TABLE)
+	writeToOutput(generateMotorList(BOM_TABLE,PART_TABLE))

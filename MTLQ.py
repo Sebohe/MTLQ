@@ -233,6 +233,7 @@ def writeToOutput(foundMotorList, notFoundInMotorList):
 	subprocess.Popen([program, fileName])
 
 if __name__=="__main__":
+	easygui.msgbox('RUNNING!')
 	MRPBOMpath = ['T:\\pcmrpw ver. 8.0\\MRPBOM.DBF','T:\\pcmrpw ver. 8.0\\mrpbom.fpt']
 	MRPPARTpath = ['T:\\pcmrpw ver. 8.0\\MRPPART.DBF','T:\\pcmrpw ver. 8.0\\MRPPART.FPT']
 
@@ -243,6 +244,7 @@ if __name__=="__main__":
 	if 'MRPPART.DBF' not in os.listdir(currentDir) and 'MRPPART.FPT' not in os.listdir(currentDir):
 		copyfile(MRPPARTpath[0],currentDir+'\\MRPPART.DBF')
 		copyfile(MRPPARTpath[1],currentDir+'\\MRPPART.FPT')
+	#print('Loading database to RAM. This can take a minute.')
 	try:
 		BOM_TABLE = DBF('MRPBOM.DBF',load=True)
 		PART_TABLE = DBF('MRPPART.DBF',load=True)

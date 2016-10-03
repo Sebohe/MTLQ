@@ -46,15 +46,15 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 	manufacturer, model, motorMechanicaName, realPartNumberList = [],[],[],[]
 	description, secondPartNumberList, templist1, largeMotorList,notFoundInMotorDictList = [],[],[],[],[]
 
-	#Parses through the BOM database in search PT in the partnumber.
-	#If found get the motor description that mechanical gives it.
-	#and get the actual PARTNUMBER
-	#bomNumber = easygui.enterbox(msg="Enter the BOM you want to look for.")
+	#Parses the parts list of the BOM and finds all of the PT11 and EL17 parts.
 	for record in partsList:
-		#if record['BOMNO'] == bomNumber:
 		if 'PT11' in record['PARTNO'] or 'EL17' in record['PARTNO']:
 			realPartNumberList.append(record['PARTNO'])
-			motorMechanicaName.append(record['REFDESMEMO'])
+			if record['REFDESMEMO']:
+				motorMechanicaName.append(record['REFDESMEMO'])
+			else:
+				motorMechanicaName.append('NAME IS AN EMPTY STRING')
+
 
 	lengthOfQuery = (len(realPartNumberList))
 	#print (realPartNumberList)
@@ -74,22 +74,31 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 	#needs to match the table list.
 	#This compares the secondPartNumberList and the realPartNumberList
 	#and looks for the same value.
+	#This is no longer needed since the parts list is in the same order.
+	"""
 	for x in range(lengthOfQuery):
 		for y in range(lengthOfQuery):
 			if secondPartNumberList[x] == realPartNumberList[y]:
 				if motorMechanicaName[y]:
 					templist1.append(motorMechanicaName[y])
 				else:
-					templist1.append('None')
-
-	motorMechanicaName = templist1
-
+					templist1.append('MOTOR NAME IS EMPTY IN BOM')
+	"""
 
 	#opens and reads the contents of the motor lookup table.
-	f = open('motors','r')
-	lines = f.readlines()
-	f.close()
-	lineLenght = len(lines)
+	try:
+		f = open('motors','r')
+		lines = f.readlines()
+		f.close()
+		lineLenght = len(lines)
+		for line in lines:
+			x = line[0]
+			x = line[1]
+			x = line[2]
+			x = line[3]
+	except Exception as e:
+		easygui.msgbox(str(e))
+		sys.exit()
 	#comapares the description and model to the lookup table
 	#to see if they match. When it does create a dictionary
 	#with all the motor values then add that dictionary to a list.
@@ -99,16 +108,15 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 		for line in lines:
 			lineParameters = line.split(",")
 			lineCounter += 1
-
-
-			if  lineParameters[0] in model[x] and lineParameters[1] in description[x].strip():
+			#print (description[x].strip())
+			if  lineParameters[0].replace(" ","") in model[x] and lineParameters[1].replace(" ","") in description[x].replace(" ",""):
 				individualMotorDict = {'Name' : motorMechanicaName[x],
 										'Part':secondPartNumberList[x],
 										'Manufacturer':manufacturer[x],
 										'Model':model[x],
 										'Description':description[x],
-										'HP':lineParameters[1],
-										'RPM':lineParameters[2],
+										'HP':lineParameters[1].strip(),
+										'RPM':lineParameters[2].strip(),
 										'A':lineParameters[3].rstrip('\n')}
 				largeMotorList.append(individualMotorDict)
 
@@ -144,86 +152,93 @@ def writeToOutput(foundMotorList, notFoundInMotorList):
 	#opens a new file called output and deletes it's contents.
 	f = open('output','w+')
 	counter = 0
-	for motor in foundMotorList:
-		counter = 1 + counter
-		f.write(str(counter))
-		f.write("\n")
-		f.write("Name: ")
-		f.write(motor['Name'])
-		f.write("\n")
+	if foundMotorList:
+		for motor in foundMotorList:
+			counter = 1 + counter
+			f.write(str(counter))
+			f.write("\n")
+			f.write("Name: ")
+			f.write(motor['Name'])
+			f.write("\n")
 
 
-		f.write("Part Number: ")
-		f.write(motor['Part'])
-		f.write("\n")
+			f.write("Part Number: ")
+			f.write(motor['Part'])
+			f.write("\n")
 
-		f.write("Manufacturer: ")
-		f.write(motor['Manufacturer'])
-		f.write("\n")
+			f.write("Manufacturer: ")
+			f.write(motor['Manufacturer'])
+			f.write("\n")
 
-		f.write("Model: ")
-		f.write(motor['Model'])
-		f.write("\n")
+			f.write("Model: ")
+			f.write(motor['Model'])
+			f.write("\n")
 
-		f.write("Description: ")
-		f.write(motor['Description'])
-		f.write("\n")
+			f.write("Description: ")
+			f.write(motor['Description'])
+			f.write("\n")
 
-		f.write("HP: ")
-		f.write(motor['HP'])
-		f.write("\n")
+			f.write("HP: ")
+			f.write(motor['HP'])
+			f.write("\n")
 
-		f.write("RPM: ")
-		f.write(motor['RPM'])
-		f.write("\n")
+			f.write("RPM: ")
+			f.write(motor['RPM'])
+			f.write("\n")
 
-		f.write("Amps: ")
-		f.write(motor['A'])
-		f.write("\n")
-		f.write("______________________")
-		f.write("\n")
-
-	f.write('\n')
-	f.write('*********************\n\n')
-	f.write('Motors not found in motor file. Some of them might need to be added to the motors file:\n\n')
-	for motor in notFoundInMotorList:
-		counter = 1 + counter
-		f.write(str(counter))
-		f.write("\n")
-		f.write("Name: ")
-		f.write(motor['Name'])
-		f.write("\n")
+			f.write("Amps: ")
+			f.write(motor['A'])
+			f.write("\n")
+			f.write("______________________")
+			f.write("\n")
+	else:
+		f.write("The bom number was not found.")
 
 
-		f.write("Part Number: ")
-		f.write(motor['Part'])
-		f.write("\n")
+	if notFoundInMotorList:
+		f.write('\n')
+		f.write('*********************\n\n')
+		f.write('Motors not found in motor file. Some of them might need to be added to the motors file:\n\n')
 
-		f.write("Manufacturer: ")
-		f.write(motor['Manufacturer'])
-		f.write("\n")
+		for motor in notFoundInMotorList:
 
-		f.write("Model: ")
-		f.write(motor['Model'])
-		f.write("\n")
+			counter = 1 + counter
+			f.write(str(counter))
+			f.write("\n")
+			f.write("Name: ")
+			f.write(motor['Name'])
+			f.write("\n")
 
-		f.write("Description: ")
-		f.write(motor['Description'])
-		f.write("\n")
 
-		f.write("HP: ")
-		f.write(motor['HP'])
-		f.write("\n")
+			f.write("Part Number: ")
+			f.write(motor['Part'])
+			f.write("\n")
 
-		f.write("RPM: ")
-		f.write(motor['RPM'])
-		f.write("\n")
+			f.write("Manufacturer: ")
+			f.write(motor['Manufacturer'])
+			f.write("\n")
 
-		f.write("Amps: ")
-		f.write(motor['A'])
-		f.write("\n")
-		f.write("______________________")
-		f.write("\n")
+			f.write("Model: ")
+			f.write(motor['Model'])
+			f.write("\n")
+
+			f.write("Description: ")
+			f.write(motor['Description'])
+			f.write("\n")
+
+			f.write("HP: ")
+			f.write(motor['HP'])
+			f.write("\n")
+
+			f.write("RPM: ")
+			f.write(motor['RPM'])
+			f.write("\n")
+
+			f.write("Amps: ")
+			f.write(motor['A'])
+			f.write("\n")
+			f.write("______________________")
+			f.write("\n")
 
 	f.close()
 
@@ -233,7 +248,7 @@ def writeToOutput(foundMotorList, notFoundInMotorList):
 	subprocess.Popen([program, fileName])
 
 if __name__=="__main__":
-	easygui.msgbox('RUNNING!')
+	easygui.msgbox('After OK, the program will load database to RAM. This can take a minute.\n\nIf you want the most up to date database, delete the database files located in the same path as this program.')
 	MRPBOMpath = ['T:\\pcmrpw ver. 8.0\\MRPBOM.DBF','T:\\pcmrpw ver. 8.0\\mrpbom.fpt']
 	MRPPARTpath = ['T:\\pcmrpw ver. 8.0\\MRPPART.DBF','T:\\pcmrpw ver. 8.0\\MRPPART.FPT']
 
@@ -249,18 +264,28 @@ if __name__=="__main__":
 		BOM_TABLE = DBF('MRPBOM.DBF',load=True)
 		PART_TABLE = DBF('MRPPART.DBF',load=True)
 	except Exception as e:
-		easygui.msgbox(e)
+		easygui.msgbox(str(e))
 
 	sys.setrecursionlimit(2000)
-	bomNumber = easygui.enterbox(msg="Enter the BOM you want to query.")
-	if not bomNumber:
-		sys.exit()
+
 
 	#print('PART TABLE HEADERS')
 	#print (PART_TABLE.field_names)
 	#print('BOM TABLE HEADERS')
 	#print (BOM_TABLE.field_names)
-	partsList = returnALLPartNumbers(bomNumber, BOM_TABLE)
+	while True:
+		bomNumber = easygui.enterbox(msg="Enter the BOM you want to query.")
+		if not bomNumber:
+			sys.exit()
+		partsList = returnALLPartNumbers(bomNumber, BOM_TABLE)
+
+		if partsList:
+			break
+		else:
+			if not easygui.ynbox(msg="No BOM found with the number: "+bomNumber+"\n\nTry again?"):
+				sys.exit()
+
+
 	writePartNumbers(partsList)
 	motorsList = generateMotorList(partsList,PART_TABLE,bomNumber)
 	writeToOutput(motorsList[0],motorsList[1])

@@ -21,31 +21,43 @@ def returnALLPartNumbers(bomNumber,TABLE_DBF):
 	for record in TABLE_DBF:
 		if record['BOMNO'] == bomNumber:
 			if record['PART_ASSY'] == 'P':
-				templist1.append(record['PARTNO'])
+				templist1.append(record)
 			elif record['PART_ASSY'] == 'A':
 				#When it is an aassembly the part number is the next
 				#bom number
 				for item in returnALLPartNumbers(record['PARTNO'], TABLE_DBF):
 					templist1.append(item)
+
 	return templist1
 
+def writePartNumbers(lista):
+	f = open('partsList_Output','w+')
+	for x in lista:
+		f.write(x['PARTNO'])
+		f.write(', ')
+		try:
+			f.write(x['REFDESMEMO'])
+		except:
+			f.write('NONE')
+		f.write('\n')
+	f.close()
 
-def generateMotorList(BOM_TABLE, PART_TABLE):
+def generateMotorList(partsList, PART_TABLE, bomNumber):
 	manufacturer, model, motorMechanicaName, realPartNumberList = [],[],[],[]
-	description, secondPartNumberList, templist1, largeMotorList = [],[],[],[]
+	description, secondPartNumberList, templist1, largeMotorList,notFoundInMotorDictList = [],[],[],[],[]
 
 	#Parses through the BOM database in search PT in the partnumber.
 	#If found get the motor description that mechanical gives it.
 	#and get the actual PARTNUMBER
-	bomNumber = easygui.enterbox(msg="Enter the BOM you want to look for.")
-	for record in BOM_TABLE:
-		if record['BOMNO'] == bomNumber:
-			if 'PT' in record['PARTNO']:
-				realPartNumberList.append(record['PARTNO'])
-				motorMechanicaName.append(record['REFDESMEMO'])
+	#bomNumber = easygui.enterbox(msg="Enter the BOM you want to look for.")
+	for record in partsList:
+		#if record['BOMNO'] == bomNumber:
+		if 'PT11' in record['PARTNO'] or 'EL17' in record['PARTNO']:
+			realPartNumberList.append(record['PARTNO'])
+			motorMechanicaName.append(record['REFDESMEMO'])
 
 	lengthOfQuery = (len(realPartNumberList))
-
+	#print (realPartNumberList)
 	#print (PART_TABLE.table_names)
 	#Look in the MRP PART database. Find model number and addtional information.
 	for part in realPartNumberList:
@@ -65,7 +77,10 @@ def generateMotorList(BOM_TABLE, PART_TABLE):
 	for x in range(lengthOfQuery):
 		for y in range(lengthOfQuery):
 			if secondPartNumberList[x] == realPartNumberList[y]:
-				templist1.append(motorMechanicaName[y])
+				if motorMechanicaName[y]:
+					templist1.append(motorMechanicaName[y])
+				else:
+					templist1.append('None')
 
 	motorMechanicaName = templist1
 
@@ -74,34 +89,104 @@ def generateMotorList(BOM_TABLE, PART_TABLE):
 	f = open('motors','r')
 	lines = f.readlines()
 	f.close()
+	lineLenght = len(lines)
 	#comapares the description and model to the lookup table
 	#to see if they match. When it does create a dictionary
 	#with all the motor values then add that dictionary to a list.
-	for line in lines:
-		lineList = line.split(",")
-		for x in range(lengthOfQuery):
-			if  lineList[0] in model[x] and lineList[1] in description[x]:
+
+	for x in range(lengthOfQuery):
+		lineCounter = 0
+		for line in lines:
+			lineParameters = line.split(",")
+			lineCounter += 1
+
+
+			if  lineParameters[0] in model[x] and lineParameters[1] in description[x].strip():
 				individualMotorDict = {'Name' : motorMechanicaName[x],
 										'Part':secondPartNumberList[x],
 										'Manufacturer':manufacturer[x],
 										'Model':model[x],
 										'Description':description[x],
-										'HP':lineList[1],
-										'RPM':lineList[2],
-										'A':lineList[3].rstrip('\n')}
+										'HP':lineParameters[1],
+										'RPM':lineParameters[2],
+										'A':lineParameters[3].rstrip('\n')}
 				largeMotorList.append(individualMotorDict)
+
+				break
+			elif(lineLenght-lineCounter == 0):
+				#'Name' : 'zName Not found for Part Number',
+
+				individualMotorDict = {'Name' : motorMechanicaName[x],
+										'Part':secondPartNumberList[x],
+										'Manufacturer':manufacturer[x],
+										'Model':model[x],
+										'Description':description[x],
+										'HP':'',
+										'RPM':'',
+										'A':''}
+				notFoundInMotorDictList.append(individualMotorDict)
+	#print (lineCounter)
+
+
 
 	#Sort the motor by the motor name.
 	newlist = sorted(largeMotorList, key=itemgetter('Name'))
 	largeMotorList = newlist
-	#thread.join()
-	return largeMotorList
 
-def writeToOutput(motorDictList):
+
+	newlist = sorted(notFoundInMotorDictList, key=itemgetter('Name'))
+	notFoundInMotorDictList = newlist
+
+	#thread.join()
+	return largeMotorList, notFoundInMotorDictList
+
+def writeToOutput(foundMotorList, notFoundInMotorList):
 	#opens a new file called output and deletes it's contents.
 	f = open('output','w+')
 	counter = 0
-	for motor in motorDictList:
+	for motor in foundMotorList:
+		counter = 1 + counter
+		f.write(str(counter))
+		f.write("\n")
+		f.write("Name: ")
+		f.write(motor['Name'])
+		f.write("\n")
+
+
+		f.write("Part Number: ")
+		f.write(motor['Part'])
+		f.write("\n")
+
+		f.write("Manufacturer: ")
+		f.write(motor['Manufacturer'])
+		f.write("\n")
+
+		f.write("Model: ")
+		f.write(motor['Model'])
+		f.write("\n")
+
+		f.write("Description: ")
+		f.write(motor['Description'])
+		f.write("\n")
+
+		f.write("HP: ")
+		f.write(motor['HP'])
+		f.write("\n")
+
+		f.write("RPM: ")
+		f.write(motor['RPM'])
+		f.write("\n")
+
+		f.write("Amps: ")
+		f.write(motor['A'])
+		f.write("\n")
+		f.write("______________________")
+		f.write("\n")
+
+	f.write('\n')
+	f.write('*********************\n\n')
+	f.write('Motors not found in motor file. Some of them might need to be added to the motors file:\n\n')
+	for motor in notFoundInMotorList:
 		counter = 1 + counter
 		f.write(str(counter))
 		f.write("\n")
@@ -165,6 +250,15 @@ if __name__=="__main__":
 		easygui.msgbox(e)
 
 	sys.setrecursionlimit(2000)
+	bomNumber = easygui.enterbox(msg="Enter the BOM you want to query.")
+	if not bomNumber:
+		sys.exit()
 
-	#returnALLPartNumbers('151032-PD7', BOM_TABLE)
-	writeToOutput(generateMotorList(BOM_TABLE,PART_TABLE))
+	#print('PART TABLE HEADERS')
+	#print (PART_TABLE.field_names)
+	#print('BOM TABLE HEADERS')
+	#print (BOM_TABLE.field_names)
+	partsList = returnALLPartNumbers(bomNumber, BOM_TABLE)
+	writePartNumbers(partsList)
+	motorsList = generateMotorList(partsList,PART_TABLE,bomNumber)
+	writeToOutput(motorsList[0],motorsList[1])

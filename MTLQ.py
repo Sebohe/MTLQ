@@ -1,18 +1,19 @@
 """
-Author: Sebastian Bolaños Heston, 2016, TopTier, LLC
+Author: Sebastian Bolanos Heston, 2016, TopTier, LLC
 About: Simple program to find all of the part numbers in a BOM that begin
-with "PT" and compare them to a lookup table with the motor specifications.
+with "PT11" or "EL17" and compare them to a lookup table with the motor specifications.
 """
 from dbfread import DBF
 import easygui
 import os
 import subprocess
+#from pwd import getpwuid
 from operator import itemgetter
-import glob
+#import glob
 import sys
 from shutil import copyfile
-import threading
-import time
+#import threading
+#import tim
 
 #Returns all fo the part numbers that belong in a BOM.
 #This is a recursive function so it will look inside of assemblies
@@ -53,12 +54,12 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 			if record['REFDESMEMO']:
 				motorMechanicaName.append(record['REFDESMEMO'])
 			else:
-				motorMechanicaName.append('NAME IS AN EMPTY STRING')
+				motorMechanicaName.append('Name is an empty String. Tell mechanical to clean up!')
 
 
 	lengthOfQuery = (len(realPartNumberList))
 	#print (realPartNumberList)
-	#print (PART_TABLE.table_names)
+
 	#Look in the MRP PART database. Find model number and addtional information.
 	for part in realPartNumberList:
 		for record in PART_TABLE:
@@ -91,13 +92,15 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 		lines = f.readlines()
 		f.close()
 		lineLenght = len(lines)
+		lineCounter = 1
 		for line in lines:
 			x = line[0]
 			x = line[1]
 			x = line[2]
 			x = line[3]
+			lineCounter += 1
 	except Exception as e:
-		easygui.msgbox(str(e))
+		easygui.msgbox(str(e)+'\nLine: '+str(lineCounter))
 		sys.exit()
 	#comapares the description and model to the lookup table
 	#to see if they match. When it does create a dictionary
@@ -109,6 +112,8 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 			lineParameters = line.split(",")
 			lineCounter += 1
 			#print (description[x].strip())
+
+
 			if  lineParameters[0].replace(" ","") in model[x] and lineParameters[1].replace(" ","") in description[x].replace(" ",""):
 				individualMotorDict = {'Name' : motorMechanicaName[x],
 										'Part':secondPartNumberList[x],
@@ -133,6 +138,8 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 										'RPM':'',
 										'A':''}
 				notFoundInMotorDictList.append(individualMotorDict)
+
+
 	#print (lineCounter)
 
 
@@ -148,17 +155,19 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 	#thread.join()
 	return largeMotorList, notFoundInMotorDictList
 
-def writeToOutput(foundMotorList, notFoundInMotorList):
+def writeToOutput(foundMotorList, notFoundInMotorList,bomName):
 	#opens a new file called output and deletes it's contents.
-	f = open('output','w+')
+	f = open(bomName+'.txt','w+')
 	counter = 0
 	if foundMotorList:
 		for motor in foundMotorList:
 			counter = 1 + counter
+			f.write("\n")
+			f.write("\n")
 			f.write(str(counter))
 			f.write("\n")
 			f.write("Name: ")
-			f.write(motor['Name'])
+			f.write(motor['Name'].rstrip("\n"))
 			f.write("\n")
 
 
@@ -190,7 +199,6 @@ def writeToOutput(foundMotorList, notFoundInMotorList):
 			f.write(motor['A'])
 			f.write("\n")
 			f.write("______________________")
-			f.write("\n")
 	else:
 		f.write("The bom number was not found.")
 
@@ -200,13 +208,16 @@ def writeToOutput(foundMotorList, notFoundInMotorList):
 		f.write('*********************\n\n')
 		f.write('Motors not found in motor file. Some of them might need to be added to the motors file:\n\n')
 
+
 		for motor in notFoundInMotorList:
 
 			counter = 1 + counter
+			f.write("\n")
+			f.write("\n")
 			f.write(str(counter))
 			f.write("\n")
 			f.write("Name: ")
-			f.write(motor['Name'])
+			f.write(motor['Name'].rstrip("\n"))
 			f.write("\n")
 
 
@@ -238,14 +249,24 @@ def writeToOutput(foundMotorList, notFoundInMotorList):
 			f.write(motor['A'])
 			f.write("\n")
 			f.write("______________________")
-			f.write("\n")
+
+
 
 	f.close()
 
 	#calls notepad.exe to view the output.
 	program = 'notepad.exe'
-	fileName = 'output'
+	fileName = bomName+'.txt'
 	subprocess.Popen([program, fileName])
+
+def getBomName(bomNumber, BOM_TABLE):
+	for record in BOM_TABLE:
+		if record['BOMNO'] == bomNumber:
+		  	return (record['BOMDESCRI'])
+
+
+def find_owner(filename):
+    return getpwuid(stat(filename).st_uid).pw_name
 
 if __name__=="__main__":
 	easygui.msgbox('After OK, the program will load database to RAM. This can take a minute.\n\nIf you want the most up to date database, delete the database files located in the same path as this program.')
@@ -253,30 +274,51 @@ if __name__=="__main__":
 	MRPPARTpath = ['T:\\pcmrpw ver. 8.0\\MRPPART.DBF','T:\\pcmrpw ver. 8.0\\MRPPART.FPT']
 
 	currentDir = os.path.dirname(os.path.realpath(__file__))
-	if 'MRPBOM.DBF' not in os.listdir(currentDir) and 'mrpbom.fpt' not in os.listdir(currentDir):
-		copyfile(MRPBOMpath[0],currentDir+'\\MRPBOM.DBF')
-		copyfile(MRPBOMpath[1],currentDir+'\\mrpbom.fpt')
-	if 'MRPPART.DBF' not in os.listdir(currentDir) and 'MRPPART.FPT' not in os.listdir(currentDir):
-		copyfile(MRPPARTpath[0],currentDir+'\\MRPPART.DBF')
-		copyfile(MRPPARTpath[1],currentDir+'\\MRPPART.FPT')
+	#if 'MRPBOM.DBF' not in os.listdir(currentDir) and 'mrpbom.fpt' not in os.listdir(currentDir):
+	#	copyfile(MRPBOMpath[0],currentDir+'\\MRPBOM.DBF')
+	#	copyfile(MRPBOMpath[1],currentDir+'\\mrpbom.fpt')
+	#if 'MRPPART.DBF' not in os.listdir(currentDir) and 'MRPPART.FPT' not in os.listdir(currentDir):
+	#	copyfile(MRPPARTpath[0],currentDir+'\\MRPPART.DBF')
+	#	copyfile(MRPPARTpath[1],currentDir+'\\MRPPART.FPT')
 	#print('Loading database to RAM. This can take a minute.')
 	try:
-		BOM_TABLE = DBF('MRPBOM.DBF',load=True)
-		PART_TABLE = DBF('MRPPART.DBF',load=True)
+		BOM_TABLE = DBF(MRPBOMpath[0],load=True)
 	except Exception as e:
+		#print (os.stat())
 		easygui.msgbox(str(e))
+		sys.exit()
+
+
+	try:
+		PART_TABLE = DBF(MRPPARTpath[0],load=True)
+	except Exception as e:
+		#print (os.stat(MRPPARTpath[0]))
+		easygui.msgbox(str(e))
+		sys.exit()
+
+
+	#print (find_owner(MRPPARTpath[0]))
 
 	sys.setrecursionlimit(2000)
 
 
 	#print('PART TABLE HEADERS')
 	#print (PART_TABLE.field_names)
+	#print()
+	#print (PART_TABLE.field_names)
 	#print('BOM TABLE HEADERS')
 	#print (BOM_TABLE.field_names)
 	while True:
 		bomNumber = easygui.enterbox(msg="Enter the BOM you want to query.")
+
+		#print (bomNumber[0])
+		#print (type(bomNumber))
+		if bomNumber[0] == "e":
+			bomNumber = bomNumber.replace("e","E")
+
 		if not bomNumber:
 			sys.exit()
+
 		partsList = returnALLPartNumbers(bomNumber, BOM_TABLE)
 
 		if partsList:
@@ -285,7 +327,6 @@ if __name__=="__main__":
 			if not easygui.ynbox(msg="No BOM found with the number: "+bomNumber+"\n\nTry again?"):
 				sys.exit()
 
-
-	writePartNumbers(partsList)
+	#writePartNumbers(partsList)
 	motorsList = generateMotorList(partsList,PART_TABLE,bomNumber)
-	writeToOutput(motorsList[0],motorsList[1])
+	writeToOutput(motorsList[0],motorsList[1],getBomName(bomNumber,BOM_TABLE))

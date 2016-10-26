@@ -3,6 +3,7 @@ output
 *.fpt
 *.FPT
 *.spec
+*.txt
 dist
 build
 __pycache__

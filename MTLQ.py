@@ -17,7 +17,7 @@ from shutil import copyfile
 
 #Returns all fo the part numbers that belong in a BOM.
 #This is a recursive function so it will look inside of assemblies
-def returnALLPartNumbers(bomNumber,TABLE_DBF):
+def returnALLRecords(bomNumber,TABLE_DBF):
 	templist1 = []
 	for record in TABLE_DBF:
 		if record['BOMNO'] == bomNumber:
@@ -26,7 +26,7 @@ def returnALLPartNumbers(bomNumber,TABLE_DBF):
 			elif record['PART_ASSY'] == 'A':
 				#When it is an aassembly the part number is the next
 				#bom number
-				for item in returnALLPartNumbers(record['PARTNO'], TABLE_DBF):
+				for item in returnALLRecords(record['PARTNO'], TABLE_DBF):
 					templist1.append(item)
 
 	return templist1
@@ -45,7 +45,8 @@ def writePartNumbers(lista):
 
 def generateMotorList(partsList, PART_TABLE, bomNumber):
 	manufacturer, model, motorMechanicaName, realPartNumberList = [],[],[],[]
-	description, secondPartNumberList, templist1, largeMotorList,notFoundInMotorDictList = [],[],[],[],[]
+	assemblyNumber, assembly, description, secondPartNumberList, templist1, largeMotorList,notFoundInMotorDictList = [],[],[],[],[],[],[]
+
 
 	#Parses the parts list of the BOM and finds all of the PT11 and EL17 parts.
 	for record in partsList:
@@ -53,8 +54,12 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 			realPartNumberList.append(record['PARTNO'])
 			if record['REFDESMEMO']:
 				motorMechanicaName.append(record['REFDESMEMO'])
+				assembly.append(record['BOMDESCRI'])
+				assemblyNumber.append(record['BOMNO'])
 			else:
 				motorMechanicaName.append('Name is an empty String. Tell mechanical to clean up!')
+				assembly.append(record['BOMDESCRI'])
+				assemblyNumber.append(record['BOMNO'])
 
 
 	lengthOfQuery = (len(realPartNumberList))
@@ -68,6 +73,7 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 				manufacturer.append(record['MANUFACTER'])
 				model.append(record['MODELNO'])
 				description.append(record['DESCRIPT'])
+
 				break
 
 
@@ -116,8 +122,10 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 
 			if  lineParameters[0].replace(" ","") in model[x] and lineParameters[1].replace(" ","") in description[x].replace(" ",""):
 				individualMotorDict = {'Name' : motorMechanicaName[x],
+										'Assembly':assembly[x],
 										'Part':secondPartNumberList[x],
 										'Manufacturer':manufacturer[x],
+										'AssemblyNumber': assemblyNumber[x],
 										'Model':model[x],
 										'Description':description[x],
 										'HP':lineParameters[1].strip(),
@@ -130,8 +138,10 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 				#'Name' : 'zName Not found for Part Number',
 
 				individualMotorDict = {'Name' : motorMechanicaName[x],
+										'Assembly':assembly[x],
 										'Part':secondPartNumberList[x],
 										'Manufacturer':manufacturer[x],
+										'AssemblyNumber': assemblyNumber[x],
 										'Model':model[x],
 										'Description':description[x],
 										'HP':'',
@@ -170,9 +180,16 @@ def writeToOutput(foundMotorList, notFoundInMotorList,bomName):
 			f.write(motor['Name'].rstrip("\n"))
 			f.write("\n")
 
+			f.write("Assembly: ")
+			f.write(motor['Assembly'])
+			f.write("\n")
 
 			f.write("Part Number: ")
 			f.write(motor['Part'])
+			f.write("\n")
+
+			f.write("Assembly BOM Number: ")
+			f.write(motor['AssemblyNumber'])
 			f.write("\n")
 
 			f.write("Manufacturer: ")
@@ -220,6 +237,9 @@ def writeToOutput(foundMotorList, notFoundInMotorList,bomName):
 			f.write(motor['Name'].rstrip("\n"))
 			f.write("\n")
 
+			f.write("Assembly: ")
+			f.write(motor['Assembly'])
+			f.write("\n")
 
 			f.write("Part Number: ")
 			f.write(motor['Part'])
@@ -304,10 +324,29 @@ if __name__=="__main__":
 
 	#print('PART TABLE HEADERS')
 	#print (PART_TABLE.field_names)
-	#print()
-	#print (PART_TABLE.field_names)
+	"""
+	['PRODCODE', 'CATINDEX', 'PARTNO', 'DESCRIPT', 'MANUFACTER', 'MODELNO', 'DRAWSIZE', 'DRAWINGNO', 'REVLEVEL', 'COST', 'POUNIT', 'PORATIO', 'UNIT',
+	'ONHAND', 'ONORDER', 'ONDEMAND', 'WIPQTY', 'MINQTY', 'MAXQTY', 'LTIME', 'PREVQTY', 'SALEPRICE', 'AVAIL', 'ALTPARTNO', 'INVAREA1', 'INVAREA2', 'INVAREA3',
+	'INVAREA4', 'LOCATE', 'PART_ASSY', 'ORDQTY', 'ORDMULT', 'STDCOST', 'MFG2', 'MFG3', 'CLASS', 'USAGE', 'MODELNO2', 'MODELNO3', 'IMAGE_FILE', 'NEWUSAGE', 'AREA2QTY',
+	'AREA3QTY', 'AREA4QTY', 'AREA5QTY', 'AREA6QTY', 'SALESMAN', 'COMMISS', 'STARTDATE', 'WEIGHT', 'INVAREA5', 'INVAREA6', 'INVAREA7', 'INVAREA8', 'INVTOT', 'LOCATE2', 'LOCATE3', 'LOCATE4',
+	'LOCATE5', 'LOCATE6', 'DIVISION', 'ALTPART1', 'ALTPART2', 'ALTPART3', 'ALTPART4', 'ALTPART5', 'ALTPART6', 'LASTPHYDAT', 'LASTQTY1', 'LASTQTY2', 'LASTQTY3', 'LASTQTY4', 'LASTQTY5', 'LASTQTY6',
+	'LASTQTYWIP', 'LOGFILE', 'LASTPOCOST', 'MFG4', 'MFG5', 'MFG6', 'MFG7', 'MFG8', 'MFG9', 'MODELNO4', 'MODELNO5', 'MODELNO6', 'MODELNO7', 'MODELNO8', 'MODELNO9', 'DACCT1', 'STDLABCOST',
+	'AVELABCOST', 'LPOLABCOST', 'LASTVENAME', 'LASTVENDID', 'FLOORSTK', 'SHELFLIFE', 'LICENSOR', 'ROYALRATE', 'PARTTYPE', 'VALUE', 'TOLERANCE', 'RATING', 'PACKTYPE', 'SCHEMATIC', 'FOOTPRINT', 'CACCT1',
+	'BUYER', 'WEBITEM', 'PRICEKEY', 'SERIALITEM', 'TAGNUMBER', 'QBPARTID', 'QBASSET', 'QBINCOME', 'QBCOGSOLD', 'STDOUTCOST', 'AVEOUTCOST', 'LPOOUTCOST', 'OUTSOURCE', 'RELFACT', 'REOCCURING', 'OBSOLETE',
+	'OBSDATE', 'SUBSONLY', 'AREA7QTY', 'AREA8QTY', 'AREA9QTY', 'AREA10QTY', 'AREA11QTY', 'INVAREA9', 'INVAREA10', 'INVAREA11', 'INVAREA12', 'LASTQTY7', 'LASTQTY8', 'LASTQTY9', 'LASTQTY10', 'LASTQTY11',
+	'LOCATE7', 'LOCATE8', 'LOCATE9', 'LOCATE10', 'LOCATE11', 'ROHS', 'BOMSTATUS', 'SHIPPABLE', 'BLOWTHRU', 'AREA12QTY', 'AREA13QTY', 'AREA14QTY', 'AREA15QTY', 'AREA16QTY', 'AREA17QTY', 'AREA18QTY', 'AREA19QTY',
+	'AREA20QTY', 'INVAREA13', 'INVAREA14', 'INVAREA15', 'INVAREA16', 'INVAREA17', 'INVAREA18', 'INVAREA19', 'INVAREA20', 'INVAREA21', 'LASTQTY12', 'LASTQTY13', 'LASTQTY14', 'LASTQTY15', 'LASTQTY16',
+	'LASTQTY17', 'LASTQTY18', 'LASTQTY19', 'LASTQTY20', 'LOCATE12', 'LOCATE13', 'LOCATE14', 'LOCATE15', 'LOCATE16', 'LOCATE17', 'LOCATE18', 'LOCATE19', 'LOCATE20', 'COGSACCT', 'RECAREA', 'TARIFFCODE', 'NCNR',
+	'SAFEWEEKS', 'MINQTYLOCK', 'WEEKSOFINV', 'COO', 'ECCN', 'AUX1', 'AUX2', 'ID1', 'WOI_QTY']
+	"""
 	#print('BOM TABLE HEADERS')
 	#print (BOM_TABLE.field_names)
+	"""
+	['BOMNO', 'BOMDESCRI', 'PRODCODE', 'CATINDEX', 'PARTNO', 'ITEMNO', 'QTY', 'PART_ASSY', 'REFDES', 'REFDES2', 'REFDES3', 'REFDES4', 'ALTPART1', 'ALTPART2',
+	'ALTPART3', 'ALTPART4', 'ALTPART5', 'ALTPART6', 'REFDESMEMO', 'KEYID', 'STAGEBIN', 'PARTDESC']
+	"""
+
+
 	while True:
 		bomNumber = easygui.enterbox(msg="Enter the BOM you want to query.")
 
@@ -319,7 +358,7 @@ if __name__=="__main__":
 		if not bomNumber:
 			sys.exit()
 
-		partsList = returnALLPartNumbers(bomNumber, BOM_TABLE)
+		partsList = returnALLRecords(bomNumber, BOM_TABLE)
 
 		if partsList:
 			break

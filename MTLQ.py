@@ -43,9 +43,9 @@ def writePartNumbers(lista):
 		f.write('\n')
 	f.close()
 
-def generateMotorList(partsList, PART_TABLE, bomNumber):
+def generateMotorList(partsList, PART_TABLE):
 	manufacturer, model, motorMechanicaName, realPartNumberList = [],[],[],[]
-	assemblyNumber, assembly, description, secondPartNumberList, templist1, largeMotorList,notFoundInMotorDictList = [],[],[],[],[],[],[]
+	quantity, assemblyNumber, assembly, description, secondPartNumberList, templist1, largeMotorList,notFoundInMotorDictList = [],[],[],[],[],[],[],[]
 
 
 	#Parses the parts list of the BOM and finds all of the PT11 and EL17 parts.
@@ -56,10 +56,12 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 				motorMechanicaName.append(record['REFDESMEMO'])
 				assembly.append(record['BOMDESCRI'])
 				assemblyNumber.append(record['BOMNO'])
+				quantity.append(record['QTY'])
 			else:
 				motorMechanicaName.append('Name is an empty String. Tell mechanical to clean up!')
 				assembly.append(record['BOMDESCRI'])
 				assemblyNumber.append(record['BOMNO'])
+				quantity.append(record['QTY'])
 
 
 	lengthOfQuery = (len(realPartNumberList))
@@ -128,6 +130,7 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 										'AssemblyNumber': assemblyNumber[x],
 										'Model':model[x],
 										'Description':description[x],
+										'QTY': quantity[x],
 										'HP':lineParameters[1].strip(),
 										'RPM':lineParameters[2].strip(),
 										'A':lineParameters[3].rstrip('\n')}
@@ -144,6 +147,7 @@ def generateMotorList(partsList, PART_TABLE, bomNumber):
 										'AssemblyNumber': assemblyNumber[x],
 										'Model':model[x],
 										'Description':description[x],
+										'QTY': quantity[x],
 										'HP':'',
 										'RPM':'',
 										'A':''}
@@ -176,20 +180,28 @@ def writeToOutput(foundMotorList, notFoundInMotorList,bomName):
 			f.write("\n")
 			f.write(str(counter))
 			f.write("\n")
+
+
 			f.write("Name: ")
 			f.write(motor['Name'].rstrip("\n"))
 			f.write("\n")
 
-			f.write("Assembly: ")
-			f.write(motor['Assembly'])
-			f.write("\n")
+			if motor['QTY'] > 1:
+				f.write("Quantity: ")
+				f.write(str(motor['QTY']))
+				f.write("\n")
+
+
+			if "empty String" in motor['Name']:
+				f.write("Assembly: ")
+				f.write(motor['Assembly'])
+				f.write("\n")
+				f.write("Assembly PDF: ")
+				f.write(motor['AssemblyNumber'])
+				f.write("\n")
 
 			f.write("Part Number: ")
 			f.write(motor['Part'])
-			f.write("\n")
-
-			f.write("Assembly BOM Number: ")
-			f.write(motor['AssemblyNumber'])
 			f.write("\n")
 
 			f.write("Manufacturer: ")
@@ -239,6 +251,10 @@ def writeToOutput(foundMotorList, notFoundInMotorList,bomName):
 
 			f.write("Assembly: ")
 			f.write(motor['Assembly'])
+			f.write("\n")
+
+			f.write("Quantity: ")
+			f.write(motorstr(['QTY']))
 			f.write("\n")
 
 			f.write("Part Number: ")
@@ -358,14 +374,15 @@ if __name__=="__main__":
 		if not bomNumber:
 			sys.exit()
 
-		partsList = returnALLRecords(bomNumber, BOM_TABLE)
+		#Complete list of all the parts in whole BOM. This is in record format
+		recordsList = returnALLRecords(bomNumber, BOM_TABLE)
 
-		if partsList:
+		if recordsList:
 			break
 		else:
 			if not easygui.ynbox(msg="No BOM found with the number: "+bomNumber+"\n\nTry again?"):
 				sys.exit()
 
 	#writePartNumbers(partsList)
-	motorsList = generateMotorList(partsList,PART_TABLE,bomNumber)
+	motorsList = generateMotorList(recordsList,PART_TABLE)
 	writeToOutput(motorsList[0],motorsList[1],getBomName(bomNumber,BOM_TABLE))

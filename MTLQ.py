@@ -199,14 +199,14 @@ def writeToOutput(foundMotorList, notFoundInMotorList,bomName):
 				f.write("Assembly PDF: ")
 				f.write(motor['AssemblyNumber'])
 				f.write("\n")
-
+				f.write("Manufacturer: ")
+				f.write(motor['Manufacturer'])
+				f.write("\n")
+				
 			f.write("Part Number: ")
 			f.write(motor['Part'])
 			f.write("\n")
 
-			f.write("Manufacturer: ")
-			f.write(motor['Manufacturer'])
-			f.write("\n")
 
 			f.write("Model: ")
 			f.write(motor['Model'])

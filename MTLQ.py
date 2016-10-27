@@ -202,7 +202,7 @@ def writeToOutput(foundMotorList, notFoundInMotorList,bomName):
 				f.write("Manufacturer: ")
 				f.write(motor['Manufacturer'])
 				f.write("\n")
-				
+
 			f.write("Part Number: ")
 			f.write(motor['Part'])
 			f.write("\n")
@@ -254,7 +254,7 @@ def writeToOutput(foundMotorList, notFoundInMotorList,bomName):
 			f.write("\n")
 
 			f.write("Quantity: ")
-			f.write(motorstr(['QTY']))
+			f.write(str(motor['QTY']))
 			f.write("\n")
 
 			f.write("Part Number: ")

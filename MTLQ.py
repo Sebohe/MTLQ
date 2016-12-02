@@ -305,7 +305,7 @@ def find_owner(filename):
     return getpwuid(stat(filename).st_uid).pw_name
 
 if __name__=="__main__":
-	easygui.msgbox('After OK, the program will load database to RAM. This can take a minute.\n\nIf you want the most up to date database, delete the database files located in the same path as this program.')
+	easygui.msgbox('After OK, the program will load database to RAM. This can take a minute.')
 	MRPBOMpath = ['T:\\pcmrpw ver. 8.0\\MRPBOM.DBF','T:\\pcmrpw ver. 8.0\\mrpbom.fpt']
 	MRPPARTpath = ['T:\\pcmrpw ver. 8.0\\MRPPART.DBF','T:\\pcmrpw ver. 8.0\\MRPPART.FPT']
 
@@ -383,6 +383,6 @@ if __name__=="__main__":
 			if not easygui.ynbox(msg="No BOM found with the number: "+bomNumber+"\n\nTry again?"):
 				sys.exit()
 
-	#writePartNumbers(partsList)
+	writePartNumbers(recordsList)
 	motorsList = generateMotorList(recordsList,PART_TABLE)
 	writeToOutput(motorsList[0],motorsList[1],getBomName(bomNumber,BOM_TABLE))

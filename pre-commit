@@ -1,0 +1,11 @@
+#!/bin/sh
+gitStatusPorcelain=$(git status --porcelain)
+
+for x in $gitStatusPorcelain; do
+	echo $x
+	if [[ $x == *.py ]]; then
+		./make.sh
+		break
+	fi
+done
+git add *.exe

@@ -17,16 +17,17 @@ from shutil import copyfile
 
 #Returns all fo the part numbers that belong in a BOM.
 #This is a recursive function so it will look inside of assemblies
-def returnALLRecords(bomNumber,TABLE_DBF):
+def returnALLRecords(bomNumber,TABLE_DBF,level):
+	level = level + 1
 	templist1 = []
 	for record in TABLE_DBF:
-		if record['BOMNO'] == bomNumber:
+		if record['BOMNO'] == bomNumber or (record['BOMNO'].replace("E","e") == bomNumber and level == 1):
 			if record['PART_ASSY'] == 'P':
 				templist1.append(record)
 			elif record['PART_ASSY'] == 'A':
 				#When it is an aassembly the part number is the next
 				#bom number
-				for item in returnALLRecords(record['PARTNO'], TABLE_DBF):
+				for item in returnALLRecords(record['PARTNO'], TABLE_DBF, level):
 					templist1.append(item)
 
 	return templist1
@@ -375,7 +376,7 @@ if __name__=="__main__":
 			sys.exit()
 
 		#Complete list of all the parts in whole BOM. This is in record format
-		recordsList = returnALLRecords(bomNumber, BOM_TABLE)
+		recordsList = returnALLRecords(bomNumber, BOM_TABLE,0)
 
 		if recordsList:
 			break

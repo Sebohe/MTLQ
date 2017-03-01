@@ -307,8 +307,8 @@ def find_owner(filename):
 
 if __name__=="__main__":
 	easygui.msgbox('After OK, the program will load database to RAM. This can take a minute.')
-	MRPBOMpath = ['T:\\pcmrpw ver. 8.0\\MRPBOM.DBF','T:\\pcmrpw ver. 8.0\\mrpbom.fpt']
-	MRPPARTpath = ['T:\\pcmrpw ver. 8.0\\MRPPART.DBF','T:\\pcmrpw ver. 8.0\\MRPPART.FPT']
+	MRPBOMpath = [r'\\toptier-mrp\pcmrpw ver. 8.0\MRPBOM.DBF',r'\\toptier-mrp\pcmrpw ver. 8.0\mrpbom.fpt']
+	MRPPARTpath = [r'\\toptier-mrp\pcmrpw ver. 8.0\MRPPART.DBF',r'\\toptier-mrp\pcmrpw ver. 8.0\MRPPART.FPT']
 
 	currentDir = os.path.dirname(os.path.realpath(__file__))
 	#if 'MRPBOM.DBF' not in os.listdir(currentDir) and 'mrpbom.fpt' not in os.listdir(currentDir):
